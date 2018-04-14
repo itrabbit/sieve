@@ -13,8 +13,8 @@ type Option struct {
 
 type Object struct {
 	idx       uint64
-	Name      string   `json:"name" sieve:"g:*"`
-	FullName  string   `json:"full_name" sieve:"g:private"`
+	Name      string   `json:"name" sieve:"s:*"`
+	FullName  string   `json:"full_name" sieve:"s:private"`
 	CreatedAt uint64   `json:"created_at"`
 	UpdatedAt uint64   `json:"updated_at" sieve:"eef:CreatedAt"`
 	Options   []Option `json:"options" sieve:"ek:Name"`

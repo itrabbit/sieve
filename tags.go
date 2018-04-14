@@ -6,7 +6,7 @@ import (
 )
 
 type tagOptions struct {
-	groups            []string // g
+	scopes            []string // s
 	exportKeys        []string // ek
 	excludeEqualField string   // eef
 }
@@ -17,8 +17,8 @@ func parseTag(tag string) (opts tagOptions) {
 		if len(param) < 3 {
 			continue
 		}
-		if strings.HasPrefix(param, "g:") {
-			opts.groups = strings.Split(param[2:], ",")
+		if strings.HasPrefix(param, "s:") {
+			opts.scopes = strings.Split(param[2:], ",")
 			continue
 		}
 		if strings.HasPrefix(param, "ek:") {

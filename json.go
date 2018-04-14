@@ -12,7 +12,7 @@ import (
 type H map[string]interface{}
 
 type MarshalerJSON interface {
-	MarshalSieveJSON(groups []string, exportKeys []string) ([]byte, error)
+	MarshalSieveJSON(scopes []string, exportKeys []string) ([]byte, error)
 }
 
 func marshalJSON(v interface{}, s *sieve) ([]byte, error) {
@@ -50,7 +50,7 @@ func marshalJSON(v interface{}, s *sieve) ([]byte, error) {
 		if i == nil {
 			return nil, nil
 		}
-		return i.MarshalSieveJSON(s.groups, nil)
+		return i.MarshalSieveJSON(s.scopes, nil)
 	}
 	if _, ok := v.(json.Marshaler); ok {
 		return json.Marshal(v)
@@ -75,7 +75,7 @@ func bustValue(val reflect.Value, s *sieve, exportKeys []string) interface{} {
 		return i
 	}
 	if i, ok := val.Interface().(MarshalerJSON); ok {
-		b, err := i.MarshalSieveJSON(s.groups, exportKeys)
+		b, err := i.MarshalSieveJSON(s.scopes, exportKeys)
 		if err != nil {
 			return nil
 		}
@@ -198,8 +198,8 @@ func convertValueToMap(val reflect.Value, s *sieve, exportKeys []string) interfa
 			}
 		}
 		opts := parseTag(field.Tag.Get("sieve"))
-		if opts.groups != nil && len(opts.groups) > 0 {
-			if !s.HasAnyGroup(opts.groups...) {
+		if opts.scopes != nil && len(opts.scopes) > 0 {
+			if !s.HasAnyScope(opts.scopes...) {
 				continue
 			}
 		}
