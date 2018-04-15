@@ -1,4 +1,5 @@
-# <img align="right" height="32px" src="https://raw.githubusercontent.com/itrabbit/sieve/master/logo.png">
+# <img height="32" src="https://raw.githubusercontent.com/itrabbit/sieve/master/logo.png">
+
 GoLang Package for filtering fields models during serialization
 
 **Support:**
