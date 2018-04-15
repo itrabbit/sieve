@@ -1,5 +1,16 @@
-# Sieve
+# <img align="right" height="32px" src="https://raw.githubusercontent.com/itrabbit/sieve/master/logo.png">
 GoLang Package for filtering fields models during serialization
+
+**Support:**
+
+- Scopes filtration fields structures
+- Exclude (when comparing field values)
+- Export values of higher level
+
+**Plans**:
+- Add versioning for fields
+- Add code generation for fast serialization
+- Add support XML, YML serializers
 
 ## Example
 

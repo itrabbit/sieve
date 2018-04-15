@@ -4,7 +4,6 @@ import (
 	"sort"
 )
 
-// Сито
 type sieve struct {
 	v      interface{}
 	scopes []string
@@ -34,7 +33,6 @@ func (s sieve) HasAnyScope(scopes ...string) bool {
 	return false
 }
 
-// Создаем набор из данных для сито
 func Sieve(v interface{}, scopes ...string) interface{} {
 	if len(scopes) > 1 {
 		sort.Strings(scopes)

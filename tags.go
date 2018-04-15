@@ -5,13 +5,7 @@ import (
 	"strings"
 )
 
-type tagOptions struct {
-	scopes            []string // s
-	exportKeys        []string // ek
-	excludeEqualField string   // eef
-}
-
-func parseTag(tag string) (opts tagOptions) {
+func parseTag(tag string) (opts options) {
 	for _, param := range strings.Split(tag, ";") {
 		param = strings.TrimSpace(param)
 		if len(param) < 3 {

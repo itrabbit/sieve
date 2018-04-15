@@ -12,7 +12,7 @@ import (
 type H map[string]interface{}
 
 type MarshalerJSON interface {
-	MarshalSieveJSON(scopes []string, exportKeys []string) ([]byte, error)
+	MarshalSieveJSON(opts Options) ([]byte, error)
 }
 
 func marshalJSON(v interface{}, s *sieve) ([]byte, error) {
@@ -50,36 +50,44 @@ func marshalJSON(v interface{}, s *sieve) ([]byte, error) {
 		if i == nil {
 			return nil, nil
 		}
-		return i.MarshalSieveJSON(s.scopes, nil)
+		return i.MarshalSieveJSON(BuildOptions(s.scopes, nil))
 	}
 	if _, ok := v.(json.Marshaler); ok {
 		return json.Marshal(v)
 	}
 	if k == reflect.Struct {
-		return json.Marshal(convertValueToMap(reflect.Indirect(reflect.ValueOf(v)), s, nil))
+		obj, err := convertValueToMap(reflect.Indirect(reflect.ValueOf(v)), s, nil)
+		if err != nil {
+			return nil, err
+		}
+		return json.Marshal(obj)
 	}
 	if k == reflect.Map {
-		return json.Marshal(bustValueMap(reflect.Indirect(reflect.ValueOf(v)), s, nil))
+		obj, err := bustValueMap(reflect.Indirect(reflect.ValueOf(v)), s, nil)
+		if err != nil {
+			return nil, err
+		}
+		return json.Marshal(obj)
 	}
 	return json.Marshal(v)
 }
 
-func bustValue(val reflect.Value, s *sieve, exportKeys []string) interface{} {
+func bustValue(val reflect.Value, s *sieve, exportKeys []string) (interface{}, error) {
 	if !val.CanInterface() {
-		return nil
+		return nil, nil
 	}
 	if s == nil {
-		return val.Interface()
+		return val.Interface(), nil
 	}
 	if i, ok := val.Interface().(json.Marshaler); ok {
-		return i
+		return i, nil
 	}
 	if i, ok := val.Interface().(MarshalerJSON); ok {
-		b, err := i.MarshalSieveJSON(s.scopes, exportKeys)
+		b, err := i.MarshalSieveJSON(BuildOptions(s.scopes, exportKeys))
 		if err != nil {
-			return nil
+			return nil, err
 		}
-		return json.RawMessage(b)
+		return json.RawMessage(b), nil
 	}
 	kind := val.Kind()
 	if kind == reflect.Array || kind == reflect.Slice {
@@ -91,39 +99,46 @@ func bustValue(val reflect.Value, s *sieve, exportKeys []string) interface{} {
 	if kind == reflect.Struct {
 		return convertValueToMap(val, s, exportKeys)
 	}
-	return val.Interface()
+	return val.Interface(), nil
 }
 
-func bustValueSlice(val reflect.Value, s *sieve, exportKeys []string) interface{} {
+func bustValueSlice(val reflect.Value, s *sieve, exportKeys []string) (interface{}, error) {
 	if !val.CanInterface() {
-		return nil
+		return nil, nil
 	}
 	if s == nil || val.Len() == 0 {
-		return val.Interface()
+		return val.Interface(), nil
 	}
 	if exportKeys != nil && len(exportKeys) > 0 {
 		list := make([]interface{}, 0)
 		for index := 0; index < val.Len(); index++ {
-			i := bustValue(reflect.Indirect(val.Index(index)), s, exportKeys)
+			i, err := bustValue(reflect.Indirect(val.Index(index)), s, exportKeys)
+			if err != nil {
+				return nil, err
+			}
 			if i != nil {
 				list = append(list, i)
 			}
 		}
-		return list
+		return list, nil
 	}
 	list := make([]interface{}, val.Len(), val.Len())
 	for index := 0; index < val.Len(); index++ {
-		list[index] = bustValue(reflect.Indirect(val.Index(index)), s, exportKeys)
+		item, err := bustValue(reflect.Indirect(val.Index(index)), s, exportKeys)
+		if err != nil {
+			return nil, err
+		}
+		list[index] = item
 	}
-	return list
+	return list, nil
 }
 
-func bustValueMap(val reflect.Value, s *sieve, exportKeys []string) interface{} {
+func bustValueMap(val reflect.Value, s *sieve, exportKeys []string) (interface{}, error) {
 	if !val.CanInterface() {
-		return nil
+		return nil, nil
 	}
 	if s == nil || val.Len() == 0 {
-		return val.Interface()
+		return val.Interface(), nil
 	}
 	m, exporting, oneKey := make(H), len(exportKeys) > 0, len(exportKeys) == 1
 	for _, key := range val.MapKeys() {
@@ -146,17 +161,21 @@ func bustValueMap(val reflect.Value, s *sieve, exportKeys []string) interface{} 
 				return bustValue(val.MapIndex(key), s, nil)
 			}
 		}
-		m[keyStr] = bustValue(val.MapIndex(key), s, nil)
+		obj, err := bustValue(val.MapIndex(key), s, nil)
+		if err != nil {
+			return nil, err
+		}
+		m[keyStr] = obj
 	}
-	return m
+	return m, nil
 }
 
-func convertValueToMap(val reflect.Value, s *sieve, exportKeys []string) interface{} {
+func convertValueToMap(val reflect.Value, s *sieve, exportKeys []string) (interface{}, error) {
 	if !val.CanInterface() {
-		return nil
+		return nil, nil
 	}
 	if s == nil || !val.IsValid() {
-		return val.Interface()
+		return val.Interface(), nil
 	}
 	t, exporting := val.Type(), false
 	if count := len(exportKeys); count > 0 {
@@ -164,10 +183,10 @@ func convertValueToMap(val reflect.Value, s *sieve, exportKeys []string) interfa
 		if count == 1 {
 			if s, ok := t.FieldByName(exportKeys[0]); ok && !s.Anonymous {
 				if c := val.FieldByName(exportKeys[0]); c.CanInterface() {
-					return reflect.Indirect(c).Interface()
+					return reflect.Indirect(c).Interface(), nil
 				}
 			}
-			return nil
+			return nil, nil
 		}
 	}
 	m := make(H)
@@ -198,7 +217,7 @@ func convertValueToMap(val reflect.Value, s *sieve, exportKeys []string) interfa
 			}
 		}
 		opts := parseTag(field.Tag.Get("sieve"))
-		if opts.scopes != nil && len(opts.scopes) > 0 {
+		if opts.HasScopes() {
 			if !s.HasAnyScope(opts.scopes...) {
 				continue
 			}
@@ -210,7 +229,7 @@ func convertValueToMap(val reflect.Value, s *sieve, exportKeys []string) interfa
 		if omitempty && isEmptyValue(fieldValue) {
 			continue
 		}
-		if len(opts.excludeEqualField) > 0 {
+		if opts.HasExcludeEqualField() {
 			c := reflect.Indirect(val.FieldByName(opts.excludeEqualField))
 			if c.CanInterface() && c.Type().Kind() == fieldValue.Type().Kind() {
 				if reflect.DeepEqual(c.Interface(), fieldValue.Interface()) {
@@ -218,7 +237,11 @@ func convertValueToMap(val reflect.Value, s *sieve, exportKeys []string) interfa
 				}
 			}
 		}
-		m[fieldName] = bustValue(fieldValue, s, opts.exportKeys)
+		obj, err := bustValue(fieldValue, s, opts.exportKeys)
+		if err != nil {
+			return nil, err
+		}
+		m[fieldName] = obj
 	}
-	return m
+	return m, nil
 }
