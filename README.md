@@ -1,5 +1,9 @@
 # <img height="32" src="https://raw.githubusercontent.com/itrabbit/sieve/master/logo.png">
 
+[![Build Status](https://travis-ci.org/itrabbit/sieve.svg?branch=master)](https://travis-ci.org/itrabbit/sieve)
+ [![CodeCov](https://codecov.io/gh/itrabbit/sieve/branch/master/graph/badge.svg)](https://codecov.io/gh/itrabbit/sieve)
+ [![GoDoc](https://godoc.org/github.com/itrabbit/sieve?status.svg)](https://godoc.org/github.com/itrabbit/sieve)
+
 GoLang Package for filtering fields models during serialization
 
 **Support:**
