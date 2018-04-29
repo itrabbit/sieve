@@ -17,7 +17,7 @@ type Object struct {
 	FullName  string         `json:"full_name" sieve:"s:private"`
 	CreatedAt uint64         `json:"created_at"`
 	UpdatedAt uint64         `json:"updated_at" sieve:"eef:CreatedAt"`
-	Options   []ObjectOption `json:"options" sieve:"ek:Name"`
+	Options   []ObjectOption `json:"options" sieve:"k:Name"`
 }
 
 func TestSieveMarshalJSON_Scopes(t *testing.T) {

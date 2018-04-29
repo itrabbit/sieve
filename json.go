@@ -218,7 +218,7 @@ func convertValueToMap(val reflect.Value, s *sieve, exportKeys []string) (interf
 		}
 		opts := parseTag(field.Tag.Get("sieve"))
 		if opts.HasScopes() {
-			if !s.HasAnyScope(opts.scopes...) {
+			if !s.HasAnyScope(opts.Scopes()...) {
 				continue
 			}
 		}
@@ -229,15 +229,12 @@ func convertValueToMap(val reflect.Value, s *sieve, exportKeys []string) (interf
 		if omitempty && isEmptyValue(fieldValue) {
 			continue
 		}
-		if opts.HasExcludeEqualField() {
-			c := reflect.Indirect(val.FieldByName(opts.excludeEqualField))
-			if c.CanInterface() && c.Type().Kind() == fieldValue.Type().Kind() {
-				if reflect.DeepEqual(c.Interface(), fieldValue.Interface()) {
-					continue
-				}
+		if opts.HasExclusions() {
+			if opts.CheckByExclusions(fieldValue, val) {
+				continue
 			}
 		}
-		obj, err := bustValue(fieldValue, s, opts.exportKeys)
+		obj, err := bustValue(fieldValue, s, opts.ExportKeys())
 		if err != nil {
 			return nil, err
 		}

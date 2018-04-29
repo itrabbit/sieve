@@ -9,13 +9,36 @@ GoLang Package for filtering fields models during serialization
 **Support:**
 
 - Scopes filtration fields structures
-- Exclude (when comparing field values)
+- Exclude strategy (equal fieldValue, equal value)
 - Export values of higher level
 
 **Plans**:
 - Add versioning for fields
 - Add code generation for fast serialization
 - Add support XML, YML serializers
+
+
+### Tag options
+
+- `s`, `scopes` - for the pane fields in structures;
+
+- `k`, `exportKeys` - exported field or value from the structure fields;
+
+- `ef`, `eef`, `excludeEqualField` - exclusion rule field (comparison with another field);
+
+- `ev`, `eev`, `excludeEqualValue` -  exclusion rule field (comparison with value);
+
+- `e.any` - if you are using multiple conditions, exceptions, if specified, is triggered when any condition.
+
+**Example:**
+```go
+type A struct {
+    Status string `sieve:"ev:unknown;ev:null;e.any"
+
+    CreatedAt time.Time `sieve:"s:private"`
+    UpdatedAt time.Time `sieve:"s:private,admin;ef:CreatedAt"`
+}
+```
 
 ## Example
 
@@ -33,8 +56,8 @@ type Object struct {
     Name      string   `json:"name" sieve:"s:*"`
     FullName  string   `json:"full_name" sieve:"s:private"`
     CreatedAt uint64   `json:"created_at"`
-    UpdatedAt uint64   `json:"updated_at" sieve:"eef:CreatedAt"`
-    Options   []Option `json:"options" sieve:"ek:Name"`
+    UpdatedAt uint64   `json:"updated_at" sieve:"ef:CreatedAt"`
+    Options   []Option `json:"options" sieve:"k:Name"`
 }
 
 ...
@@ -73,6 +96,7 @@ func main() {
 `XRP: rEQwgdCr8Jma3GY2s55SLoZq2jmqmWUBDY`
 
 `PayPal / Yandex Money: garin1221@yandex.ru`
+
 
 ## License
 

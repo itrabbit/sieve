@@ -1,26 +1,30 @@
 package sieve
 
+import "reflect"
+
 type Options interface {
 	HasScopes() bool
 	HasExportKeys() bool
-	HasExcludeEqualField() bool
+	HasExclusions() bool
 
 	Scopes() []string
 	ExportKeys() []string
-	ExcludeEqualField() string
+	CheckByExclusions(v ...reflect.Value) bool
 }
 
 type OptionsBuilder interface {
 	Options
 	SetScopes(scopes ...string) OptionsBuilder
 	SetExportKeys(keys ...string) OptionsBuilder
-	SetExcludeEqualField(fieldName string) OptionsBuilder
+	PutExclusionStrategy(s ExclusionStrategy) OptionsBuilder
+	SetIsAnyExclusion(v bool) OptionsBuilder
 }
 
 type options struct {
-	scopes            []string // s
-	exportKeys        []string // ek
-	excludeEqualField string   // eef
+	scopes         []string            // s
+	exportKeys     []string            // k
+	exclusions     []ExclusionStrategy // e+ (ef, ev)
+	isAnyExclusion bool                // e.any
 }
 
 func (o options) HasScopes() bool {
@@ -30,9 +34,8 @@ func (o options) HasScopes() bool {
 func (o options) HasExportKeys() bool {
 	return o.exportKeys != nil && len(o.exportKeys) > 0
 }
-
-func (o options) HasExcludeEqualField() bool {
-	return len(o.excludeEqualField) > 0
+func (o options) HasExclusions() bool {
+	return o.exclusions != nil && len(o.exclusions) > 0
 }
 
 func (o options) Scopes() []string {
@@ -43,8 +46,21 @@ func (o options) ExportKeys() []string {
 	return o.exportKeys
 }
 
-func (o options) ExcludeEqualField() string {
-	return o.excludeEqualField
+func (o options) CheckByExclusions(v ...reflect.Value) bool {
+	if o.exclusions != nil {
+		for _, exclusion := range o.exclusions {
+			if exclusion.Check(v...) {
+				if o.isAnyExclusion {
+					return true
+				}
+				continue
+			} else if !o.isAnyExclusion {
+				return false
+			}
+		}
+		return !o.isAnyExclusion
+	}
+	return false
 }
 
 func (o *options) SetScopes(scopes ...string) OptionsBuilder {
@@ -57,13 +73,17 @@ func (o *options) SetExportKeys(keys ...string) OptionsBuilder {
 	return o
 }
 
-func (o *options) SetExcludeEqualField(fieldName string) OptionsBuilder {
-	o.excludeEqualField = fieldName
+func (o *options) PutExclusionStrategy(s ExclusionStrategy) OptionsBuilder {
+	if o.exclusions == nil {
+		o.exclusions = make([]ExclusionStrategy, 0, 0)
+	}
+	o.exclusions = append(o.exclusions, s)
 	return o
 }
 
-func EmptyOptions() OptionsBuilder {
-	return &options{}
+func (o *options) SetIsAnyExclusion(v bool) OptionsBuilder {
+	o.isAnyExclusion = v
+	return o
 }
 
 func BuildOptions(scopes []string, exportKeys []string) OptionsBuilder {
