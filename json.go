@@ -234,7 +234,11 @@ func convertValueToMap(val reflect.Value, s *sieve, exportKeys []string) (interf
 				continue
 			}
 		}
-		obj, err := bustValue(fieldValue, s, opts.ExportKeys())
+		ns := s
+		if opts.HasNextScopes() {
+			ns = &sieve{v: s.v, scopes: opts.NextScopes()}
+		}
+		obj, err := bustValue(fieldValue, ns, opts.ExportKeys())
 		if err != nil {
 			return nil, err
 		}

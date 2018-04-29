@@ -4,10 +4,12 @@ import "reflect"
 
 type Options interface {
 	HasScopes() bool
+	HasNextScopes() bool
 	HasExportKeys() bool
 	HasExclusions() bool
 
 	Scopes() []string
+	NextScopes() []string
 	ExportKeys() []string
 	CheckByExclusions(v ...reflect.Value) bool
 }
@@ -16,12 +18,14 @@ type OptionsBuilder interface {
 	Options
 	SetScopes(scopes ...string) OptionsBuilder
 	SetExportKeys(keys ...string) OptionsBuilder
+	SetNextScopes(scopes ...string) OptionsBuilder
 	PutExclusionStrategy(s ExclusionStrategy) OptionsBuilder
 	SetIsAnyExclusion(v bool) OptionsBuilder
 }
 
 type options struct {
 	scopes         []string            // s
+	nextScopes     []string            // ns
 	exportKeys     []string            // k
 	exclusions     []ExclusionStrategy // e+ (ef, ev)
 	isAnyExclusion bool                // e.any
@@ -29,6 +33,10 @@ type options struct {
 
 func (o options) HasScopes() bool {
 	return o.scopes != nil && len(o.scopes) > 0
+}
+
+func (o options) HasNextScopes() bool {
+	return o.nextScopes != nil && len(o.nextScopes) > 0
 }
 
 func (o options) HasExportKeys() bool {
@@ -40,6 +48,10 @@ func (o options) HasExclusions() bool {
 
 func (o options) Scopes() []string {
 	return o.scopes
+}
+
+func (o options) NextScopes() []string {
+	return o.nextScopes
 }
 
 func (o options) ExportKeys() []string {
@@ -65,6 +77,11 @@ func (o options) CheckByExclusions(v ...reflect.Value) bool {
 
 func (o *options) SetScopes(scopes ...string) OptionsBuilder {
 	o.scopes = scopes
+	return o
+}
+
+func (o *options) SetNextScopes(scopes ...string) OptionsBuilder {
+	o.nextScopes = scopes
 	return o
 }
 

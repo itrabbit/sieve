@@ -22,6 +22,8 @@ GoLang Package for filtering fields models during serialization
 
 - `s`, `scopes` - for the pane fields in structures;
 
+- `ns`, `nextScopes` - next scopes in the attachment;
+
 - `k`, `exportKeys` - exported field or value from the structure fields;
 
 - `ef`, `eef`, `excludeEqualField` - exclusion rule field (comparison with another field);

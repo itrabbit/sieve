@@ -22,6 +22,8 @@ func parseTag(tag string) Options {
 		switch strings.TrimSpace(chunks[0]) {
 		case "s", "scopes":
 			opts.scopes = strings.Split(chunks[1], ",")
+		case "ns", "nextScopes":
+			opts.nextScopes = strings.Split(chunks[1], ",")
 		case "k", "exportKeys":
 			opts.exportKeys = strings.Split(chunks[1], ",")
 			sort.Strings(opts.exportKeys)
