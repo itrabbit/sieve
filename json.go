@@ -90,6 +90,10 @@ func bustValue(val reflect.Value, s *sieve, exportKeys []string) (interface{}, e
 		return json.RawMessage(b), nil
 	}
 	kind := val.Kind()
+	if kind == reflect.Interface {
+		val = reflect.Indirect(val.Elem())
+		kind = val.Kind()
+	}
 	if kind == reflect.Array || kind == reflect.Slice {
 		return bustValueSlice(val, s, exportKeys)
 	}
@@ -158,10 +162,10 @@ func bustValueMap(val reflect.Value, s *sieve, exportKeys []string) (interface{}
 				continue
 			}
 			if oneKey {
-				return bustValue(val.MapIndex(key), s, nil)
+				return bustValue(reflect.Indirect(val.MapIndex(key)), s, nil)
 			}
 		}
-		obj, err := bustValue(val.MapIndex(key), s, nil)
+		obj, err := bustValue(reflect.Indirect(val.MapIndex(key)), s, nil)
 		if err != nil {
 			return nil, err
 		}
