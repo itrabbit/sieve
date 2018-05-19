@@ -73,6 +73,9 @@ func marshalJSON(v interface{}, s *sieve) ([]byte, error) {
 }
 
 func bustValue(val reflect.Value, s *sieve, exportKeys []string) (interface{}, error) {
+	if !val.IsValid() {
+		return nil, nil
+	}
 	if !val.CanInterface() {
 		return nil, nil
 	}
@@ -92,6 +95,12 @@ func bustValue(val reflect.Value, s *sieve, exportKeys []string) (interface{}, e
 	kind := val.Kind()
 	if kind == reflect.Interface {
 		val = reflect.Indirect(val.Elem())
+		if !val.IsValid() {
+			return nil, nil
+		}
+		if !val.CanInterface() {
+			return nil, nil
+		}
 		kind = val.Kind()
 	}
 	if kind == reflect.Array || kind == reflect.Slice {
@@ -107,6 +116,9 @@ func bustValue(val reflect.Value, s *sieve, exportKeys []string) (interface{}, e
 }
 
 func bustValueSlice(val reflect.Value, s *sieve, exportKeys []string) (interface{}, error) {
+	if !val.IsValid() {
+		return nil, nil
+	}
 	if !val.CanInterface() {
 		return nil, nil
 	}
@@ -138,6 +150,9 @@ func bustValueSlice(val reflect.Value, s *sieve, exportKeys []string) (interface
 }
 
 func bustValueMap(val reflect.Value, s *sieve, exportKeys []string) (interface{}, error) {
+	if !val.IsValid() {
+		return nil, nil
+	}
 	if !val.CanInterface() {
 		return nil, nil
 	}
@@ -146,6 +161,9 @@ func bustValueMap(val reflect.Value, s *sieve, exportKeys []string) (interface{}
 	}
 	m, exporting, oneKey := make(H), len(exportKeys) > 0, len(exportKeys) == 1
 	for _, key := range val.MapKeys() {
+		if !key.IsValid() {
+			continue
+		}
 		if !key.CanInterface() {
 			continue
 		}
@@ -162,10 +180,10 @@ func bustValueMap(val reflect.Value, s *sieve, exportKeys []string) (interface{}
 				continue
 			}
 			if oneKey {
-				return bustValue(reflect.Indirect(val.MapIndex(key)), s, nil)
+				return bustValue(val.MapIndex(key), s, nil)
 			}
 		}
-		obj, err := bustValue(reflect.Indirect(val.MapIndex(key)), s, nil)
+		obj, err := bustValue(val.MapIndex(key), s, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -175,6 +193,9 @@ func bustValueMap(val reflect.Value, s *sieve, exportKeys []string) (interface{}
 }
 
 func convertValueToMap(val reflect.Value, s *sieve, exportKeys []string) (interface{}, error) {
+	if !val.IsValid() {
+		return nil, nil
+	}
 	if !val.CanInterface() {
 		return nil, nil
 	}
@@ -186,7 +207,7 @@ func convertValueToMap(val reflect.Value, s *sieve, exportKeys []string) (interf
 		exporting = true
 		if count == 1 {
 			if s, ok := t.FieldByName(exportKeys[0]); ok && !s.Anonymous {
-				if c := val.FieldByName(exportKeys[0]); c.CanInterface() {
+				if c := val.FieldByName(exportKeys[0]); c.IsValid() && c.CanInterface() {
 					return reflect.Indirect(c).Interface(), nil
 				}
 			}
@@ -211,14 +232,17 @@ func convertValueToMap(val reflect.Value, s *sieve, exportKeys []string) (interf
 		fieldName, omitempty := field.Name, false
 		if tag, ok := field.Tag.Lookup("json"); ok {
 			if idx := strings.Index(tag, ","); idx != -1 {
-				if name := strings.TrimSpace(tag[:idx]); len(name) > 0 {
-					fieldName = name
-				}
 				omitempty = strings.Contains(tag[idx+1:], "omitempty")
+				if name := strings.TrimSpace(tag[:idx]); len(name) > 0 {
+					tag = name
+				}
 			}
 			if tag = strings.TrimSpace(tag); len(tag) > 0 {
 				fieldName = tag
 			}
+		}
+		if len(fieldName) < 1 || fieldName == "-" {
+			continue
 		}
 		opts := parseTag(field.Tag.Get("sieve"))
 		if opts.HasScopes() {
@@ -227,6 +251,9 @@ func convertValueToMap(val reflect.Value, s *sieve, exportKeys []string) (interf
 			}
 		}
 		fieldValue := reflect.Indirect(val.Field(index))
+		if !fieldValue.IsValid() {
+			continue
+		}
 		if !fieldValue.CanInterface() {
 			continue
 		}
@@ -244,7 +271,7 @@ func convertValueToMap(val reflect.Value, s *sieve, exportKeys []string) (interf
 		}
 		obj, err := bustValue(fieldValue, ns, opts.ExportKeys())
 		if err != nil {
-			return nil, err
+			continue
 		}
 		m[fieldName] = obj
 	}
