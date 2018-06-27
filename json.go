@@ -37,7 +37,7 @@ func marshalJSON(v interface{}, s *sieve) ([]byte, error) {
 					if !empty {
 						buff.WriteByte(',')
 					} else {
-						empty = true
+						empty = false
 					}
 					buff.Write(b)
 				}
