@@ -26,6 +26,36 @@ type Nesting struct {
 	UpdatedAt uint64 `json:"updated_at" sieve:"eef:CreatedAt"`
 }
 
+type ObjectN struct {
+	a         ObjectOption
+	CreatedAt uint64 `json:"created_at"`
+	UpdatedAt uint64 `json:"updated_at" sieve:"eef:CreatedAt"`
+}
+
+func TestSieveMarshalJSON_UnexportedFields(t *testing.T) {
+	obj := ObjectN{
+		a: ObjectOption{
+			Name:  "One",
+			Value: "Value",
+		},
+		CreatedAt: 100,
+		UpdatedAt: 100,
+	}
+	b, err := json.Marshal(Sieve(&obj, "public"))
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if bytes.Contains(b, []byte("name")) {
+		t.Fail()
+		return
+	}
+	if bytes.Contains(b, []byte("value")) {
+		t.Fail()
+		return
+	}
+}
+
 func TestSieveMarshalJSON_Nested(t *testing.T) {
 	obj := Nesting{
 		ObjectOption: ObjectOption{
