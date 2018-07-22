@@ -218,6 +218,16 @@ func convertValueToMap(val reflect.Value, s *sieve, exportKeys []string) (interf
 	for index := 0; index < t.NumField(); index++ {
 		field := t.Field(index)
 		if field.Anonymous {
+			if field.Type.Kind() == reflect.Struct {
+				if sub, err := convertValueToMap(val.Field(index), s, exportKeys); err == nil && sub != nil {
+					// Merge map and sub map
+					if subM, ok := sub.(H); ok {
+						for subK, subV := range subM {
+							m[subK] = subV
+						}
+					}
+				}
+			}
 			continue
 		}
 		if exporting {

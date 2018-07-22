@@ -13,7 +13,7 @@ GoLang Package for filtering fields models during serialization
 - Export values of higher level
 
 **Plans**:
-- Add versioning for fields
+- Add version for fields
 - Add code generation for fast serialization
 - Add support XML, YML serializers
 

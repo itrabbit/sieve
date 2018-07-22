@@ -20,6 +20,36 @@ type Object struct {
 	Options   []ObjectOption `json:"options" sieve:"k:Name"`
 }
 
+type Nesting struct {
+	ObjectOption
+	CreatedAt uint64 `json:"created_at"`
+	UpdatedAt uint64 `json:"updated_at" sieve:"eef:CreatedAt"`
+}
+
+func TestSieveMarshalJSON_Nested(t *testing.T) {
+	obj := Nesting{
+		ObjectOption: ObjectOption{
+			Name:  "One",
+			Value: "Value",
+		},
+		CreatedAt: 100,
+		UpdatedAt: 100,
+	}
+	b, err := json.Marshal(Sieve(&obj, "public"))
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if !bytes.Contains(b, []byte("name")) {
+		t.Fail()
+		return
+	}
+	if !bytes.Contains(b, []byte("value")) {
+		t.Fail()
+		return
+	}
+}
+
 func TestSieveMarshalJSON_Scopes(t *testing.T) {
 	obj := Object{
 		idx:      100,
